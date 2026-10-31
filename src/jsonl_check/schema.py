@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Iterable, Iterator, List, Optional, Pattern, Set, Union
+from typing import Any, Iterator, Optional, Pattern, Union
 
 from .errors import ValidationError, format_path
 
@@ -41,11 +41,13 @@ def _get_type_name(val: Any) -> str:
 class Schema:
     """Compiled structural schema for JSON/JSONL validation."""
 
-    def __init__(self, raw: Union[dict[str, Any], "Schema", str]) -> None:
+    raw_schema: dict[str, Any]
+
+    def __init__(self, raw: Union[dict[str, Any], Schema, str]) -> None:
         if isinstance(raw, Schema):
             # Clone or reuse
-            self._init_from_dict(raw.raw_schema)
             self.raw_schema = raw.raw_schema
+            self._init_from_dict(raw.raw_schema)
         elif isinstance(raw, str):
             parsed = json.loads(raw)
             if not isinstance(parsed, dict):
@@ -68,13 +70,15 @@ class Schema:
         elif isinstance(raw_type, (list, tuple)):
             self.types = tuple(str(t).lower() for t in raw_type)
         else:
-            raise ValueError(f"'type' must be string or list of strings, got {type(raw_type).__name__}")
+            msg = f"'type' must be string or list of strings, got {type(raw_type).__name__}"
+            raise ValueError(msg)
 
         # Required fields
         raw_required = d.get("required")
         if raw_required is not None:
             if not isinstance(raw_required, (list, tuple)):
-                raise ValueError(f"'required' must be list of strings, got {type(raw_required).__name__}")
+                msg = f"'required' must be list of strings, got {type(raw_required).__name__}"
+                raise ValueError(msg)
             self.required: tuple[str, ...] = tuple(str(k) for k in raw_required)
         else:
             self.required = ()
@@ -97,9 +101,11 @@ class Schema:
         elif isinstance(raw_add_props, dict):
             self.additional_properties = Schema(raw_add_props)
         else:
-            raise ValueError(
-                f"'additionalProperties' must be boolean or dict schema, got {type(raw_add_props).__name__}"
+            msg = (
+                f"'additionalProperties' must be boolean or dict schema, "
+                f"got {type(raw_add_props).__name__}"
             )
+            raise ValueError(msg)
 
         # Items (for arrays)
         raw_items = d.get("items")
@@ -110,7 +116,8 @@ class Schema:
         elif isinstance(raw_items, (list, tuple)):
             self.items = [Schema(sub) for sub in raw_items]
         else:
-            raise ValueError(f"'items' must be dict or list of schemas, got {type(raw_items).__name__}")
+            msg = f"'items' must be dict or list of schemas, got {type(raw_items).__name__}"
+            raise ValueError(msg)
 
         # Enum & Const
         self.enum: Optional[list[Any]] = d.get("enum")
@@ -211,10 +218,7 @@ class Schema:
             # Check equality against enum elements (handling bool != 1, 0)
             in_enum = False
             for allowed in self.enum:
-                if type(allowed) is type(value) and allowed == value:
-                    in_enum = True
-                    break
-                elif (
+                if type(allowed) is type(value) and allowed == value or (
                     isinstance(allowed, (int, float))
                     and isinstance(value, (int, float))
                     and not isinstance(allowed, bool)
@@ -300,7 +304,9 @@ class Schema:
                     column=column,
                     path=path,
                     code="max_length_error",
-                    message=f"String length {len(value)} is greater than maxLength {self.max_length}",
+                    message=(
+                        f"String length {len(value)} is greater than maxLength {self.max_length}"
+                    ),
                     value=value,
                 )
             if self.pattern is not None and not self.pattern.search(value):
@@ -321,7 +327,10 @@ class Schema:
                     column=column,
                     path=path,
                     code="min_properties_error",
-                    message=f"Object property count {len(value)} is less than minProperties {self.min_properties}",
+                    message=(
+                        f"Object property count {len(value)} is less than "
+                        f"minProperties {self.min_properties}"
+                    ),
                     value=len(value),
                 )
             if self.max_properties is not None and len(value) > self.max_properties:
@@ -330,7 +339,10 @@ class Schema:
                     column=column,
                     path=path,
                     code="max_properties_error",
-                    message=f"Object property count {len(value)} is greater than maxProperties {self.max_properties}",
+                    message=(
+                        f"Object property count {len(value)} is greater than "
+                        f"maxProperties {self.max_properties}"
+                    ),
                     value=len(value),
                 )
 

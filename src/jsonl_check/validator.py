@@ -127,7 +127,7 @@ def validate_json(
 
 
 def validate_file(
-    file_or_path: Union[str, os.PathLike, TextIO],
+    file_or_path: Union[str, os.PathLike[str], TextIO],
     schema: Optional[Union[Schema, dict[str, Any], str]] = None,
     mode: str = "auto",
     fail_fast: bool = False,
@@ -219,11 +219,8 @@ def is_valid(
     mode: str = "auto",
 ) -> bool:
     """Check whether a file, stream, or value is valid without returning errors."""
-    if isinstance(file_or_data, (str, os.PathLike)) and os.path.isfile(str(file_or_data)):
-        for _ in validate_file(file_or_data, schema=schema, mode=mode, fail_fast=True):
-            return False
-        return True
-    elif hasattr(file_or_data, "readline"):
+    is_path = isinstance(file_or_data, (str, os.PathLike)) and os.path.isfile(str(file_or_data))
+    if is_path or hasattr(file_or_data, "readline"):
         for _ in validate_file(file_or_data, schema=schema, mode=mode, fail_fast=True):
             return False
         return True

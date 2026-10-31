@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import re
-from typing import Optional
+from typing import Any, Optional
 
 from .errors import format_path
 
@@ -31,8 +30,10 @@ class JSONLocationScanner:
 
         self.locations["$"] = (1, 1)
 
-        # Stack entries: dict(kind='object'|'array', path=str, key=str|None, index=int, expecting_val=bool)
-        stack: list[dict] = []
+        # Stack entries: dict(
+        #   kind='object'|'array', path=str, key=str|None, index=int, expecting_val=bool
+        # )
+        stack: list[dict[str, Any]] = []
         current_path = "$"
 
         while idx < n:
@@ -167,14 +168,18 @@ class JSONLocationScanner:
                             top["expecting_val"] = False
             else:
                 # Number, boolean, null
-                start_idx = idx
                 while idx < n and text[idx] not in " \t\r\n,]}":
                     idx += 1
                     col += 1
 
                 if stack:
                     top = stack[-1]
-                    if top["kind"] == "object" and top.get("key") is not None and not top.get("expecting_key"):
+                    is_obj_val = (
+                        top["kind"] == "object"
+                        and top.get("key") is not None
+                        and not top.get("expecting_key")
+                    )
+                    if is_obj_val:
                         field_path = format_path(top["path"], top["key"])
                         self.locations[field_path] = (tok_line, tok_col)
                     elif top["kind"] == "array" and top.get("expecting_val"):

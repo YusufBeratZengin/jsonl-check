@@ -7,7 +7,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Iterator, Optional, TextIO
+from typing import Iterator, Optional, TextIO
 
 from .errors import ValidationError
 from .schema import Schema
@@ -65,7 +65,7 @@ def _stream_errors(
             if filename:
                 d["file"] = filename
             item_str = json.dumps(d, indent=2)
-            indented = "\n".join("  " + l for l in item_str.splitlines())
+            indented = "\n".join("  " + line for line in item_str.splitlines())
             if not first:
                 out.write(",\n")
             else:
@@ -88,7 +88,10 @@ def create_parser() -> argparse.ArgumentParser:
         "file",
         nargs="?",
         default="-",
-        help="Path to JSON or JSONL file to validate, or '-' to read from standard input (default: -)",
+        help=(
+            "Path to JSON or JSONL file to validate, or '-' to read from standard input "
+            "(default: -)"
+        ),
     )
     parser.add_argument(
         "-s",
@@ -154,7 +157,10 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """CLI entry point. Returns exit code 0 on success, 1 on validation error, 2 on operational error."""
+    """CLI entry point.
+
+    Returns exit code 0 on success, 1 on validation error, 2 on operational error.
+    """
     parser = create_parser()
     args = parser.parse_args(argv)
 

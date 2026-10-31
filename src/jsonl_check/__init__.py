@@ -12,13 +12,13 @@ from .validator import (
 
 __version__ = "0.1.0"
 __all__ = [
-    "ValidationError",
-    "format_path",
     "Schema",
+    "ValidationError",
+    "__version__",
+    "format_path",
+    "is_valid",
     "validate_file",
     "validate_json",
     "validate_jsonl",
     "validate_value",
-    "is_valid",
-    "__version__",
 ]

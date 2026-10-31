@@ -36,7 +36,7 @@ def format_path(parent: str, key_or_index: Union[str, int]) -> str:
 class ValidationError:
     """Represents a single validation or syntax error."""
 
-    __slots__ = ("line", "column", "path", "code", "message", "value")
+    __slots__ = ("code", "column", "line", "message", "path", "value")
 
     def __init__(
         self,
